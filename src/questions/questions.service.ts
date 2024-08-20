@@ -5,32 +5,52 @@ import { PrismaService } from 'src/database/prisma.service';
 
 @Injectable()
 export class QuestionsService {
-  
   @Inject()
   private readonly prisma: PrismaService;
 
-  async create(createQuestionDto: CreateQuestionDto,userId: number) {
+  async create(createQuestionDto: CreateQuestionDto, req: any) {
     return await this.prisma.questions.create({
-      data: { ...createQuestionDto, userId },
+      data: { ...createQuestionDto, userId: req.sub.sub },
     });
   }
 
   async findAll() {
-    return await this.prisma.questions.findMany();
+    return await this.prisma.questions.findMany({
+      include: {
+        answers: true,
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
   }
 
   async findOne(id: number) {
-    return await this.prisma.questions.findUnique({where: {id}})
+    return await this.prisma.questions.findUnique({
+      where: { id },
+      include: {
+        answers: true,
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
   }
 
   async update(id: number, updateQuestionDto: UpdateQuestionDto) {
     return await this.prisma.questions.update({
-      where: {id},
-      data: updateQuestionDto
+      where: { id },
+      data: updateQuestionDto,
     });
   }
 
   remove(id: number) {
-    return this.prisma.questions.delete({where: {id}})
+    return this.prisma.questions.delete({ where: { id } });
   }
 }
