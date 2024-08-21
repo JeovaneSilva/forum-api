@@ -1,47 +1,60 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { Prisma, User as UserModel } from '@prisma/client';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { User as UserModel } from '@prisma/client';
 import { UserService } from './user.service';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { ValidationPipe } from '@nestjs/common';
+import { CreateUserDto } from './dto/createUser.dto';
+import { UpdateUserDto } from './dto/updateUser.dto';
 
 @Controller('user')
 export class UserController {
-    constructor(private userService: UserService){
+  constructor(private userService: UserService) {}
 
-    }
-
-    @Post()
+  @Post()
   async signupUser(
-    @Body() userData: Prisma.UserCreateInput,
+    @Body(new ValidationPipe()) createUserDto: CreateUserDto,
   ): Promise<UserModel> {
-    return this.userService.createUser(userData);
+    return this.userService.createUser(createUserDto);
   }
 
   @Get()
-    async findAll() {
-        return this.userService.findAll();
-    }
+  async findAll() {
+    return this.userService.findAll();
+  }
 
   @UseGuards(AuthGuard)
   @Get(':id')
-  async getUser(@Param('id') id: string): Promise<Omit<UserModel, 'password'>>{
-    return this.userService.user({ id: Number(id) });
+  async getUser(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<Omit<UserModel, 'password'>> {
+    return this.userService.user({ id });
   }
 
   @UseGuards(AuthGuard)
   @Patch(':id')
   async updateUser(
-    @Body() userData: Prisma.UserUpdateInput,
-    @Param('id') id: string): Promise<UserModel> {
+    @Body(new ValidationPipe()) userData: UpdateUserDto,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<UserModel> {
     return this.userService.updateUser({
-      where: {id:Number(id)}, 
-      data: userData
+      where: { id },
+      data: userData,
     });
   }
 
-  @UseGuards(AuthGuard) 
-  
+  @UseGuards(AuthGuard)
   @Delete(':id')
-  async deleteuser(@Param('id') id: string): Promise<UserModel> {
-    return this.userService.deleteUser({ id: Number(id) });
+  async deleteuser(@Param('id', ParseIntPipe) id: number): Promise<UserModel> {
+    return this.userService.deleteUser({ id });
   }
 }
